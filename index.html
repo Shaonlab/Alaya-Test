@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Alaya Alertness Check</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#fbf8f5; --card:#ffffff; --ink:#1d1a19; --ink2:#5a5552; --muted:#8c8580;
+  --line:#e6dfda; --accent:#8a2b4a; --accent-ink:#ffffff; --soft:#f4ebee;
+  --stim:#d6283b; --pre:#2a78d6; --post:#eb6834; --grid:#ece6e1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#151312; --card:#1f1c1b; --ink:#f5f1ee; --ink2:#c3bcb6; --muted:#8f8882;
+    --line:#35302d; --accent:#d77a98; --accent-ink:#1a0d12; --soft:#2a2124;
+    --stim:#ff5b66; --pre:#3987e5; --post:#d95926; --grid:#2c2826;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#151312; --card:#1f1c1b; --ink:#f5f1ee; --ink2:#c3bcb6; --muted:#8f8882;
+  --line:#35302d; --accent:#d77a98; --accent-ink:#1a0d12; --soft:#2a2124;
+  --stim:#ff5b66; --pre:#3987e5; --post:#d95926; --grid:#2c2826;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+header h1{font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0}
+.badge{font-size:12px;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 18px}
+h2{font-size:22px;line-height:1.25;margin:0 0 8px}
+p{margin:0 0 12px;color:var(--ink2)}
+.small{font-size:13px;color:var(--muted)}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:12px 16px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;width:100%;padding:14px}
+button:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:10px}
+.row>button{flex:1}
+.seg button.on{border-color:var(--accent);background:var(--soft);font-weight:600}
+.steps{display:flex;gap:6px;margin:0 0 16px}
+.steps span{flex:1;height:4px;border-radius:4px;background:var(--line)}
+.steps span.on{background:var(--accent)}
+/* KSS */
+.kss{display:flex;flex-direction:column;gap:6px;margin:14px 0 18px}
+.kss button{display:flex;gap:12px;align-items:center;text-align:left;padding:10px 12px}
+.kss b{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:8px;background:var(--soft);color:var(--accent);font-size:14px}
+.kss button.on{border-color:var(--accent);background:var(--soft)}
+.kss button.on b{background:var(--accent);color:var(--accent-ink)}
+/* PVT */
+#pvt{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;touch-action:manipulation;user-select:none;-webkit-user-select:none;z-index:10}
+#pvt .top{display:flex;justify-content:space-between;padding:14px 16px;color:var(--muted);font-size:13px}
+#pvt .bar{height:3px;background:var(--line);margin:0 16px}
+#pvt .bar i{display:block;height:100%;width:0;background:var(--accent)}
+#pvt .stage{flex:1;display:grid;place-items:center}
+#counter{font:700 64px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--stim);font-variant-numeric:tabular-nums;min-height:72px}
+#counter.fb{color:var(--ink)}
+#counter.warn{font-size:22px;color:var(--muted);font-family:inherit;font-weight:500}
+#pvt .hint{text-align:center;color:var(--muted);font-size:13px;padding:0 16px 28px}
+/* results */
+table{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 16px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left;color:var(--ink2)}
+th{font-size:12px;color:var(--muted);font-weight:500}
+.key{display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:13px;color:var(--ink2)}
+.key i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.chartbox{position:relative;margin:4px 0 14px}
+svg text{fill:var(--muted);font-size:11px}
+#tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:4px 8px;border-radius:6px;white-space:nowrap;display:none;transform:translate(-50%,-120%)}
+.note{background:var(--soft);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--ink2);margin-top:12px}
+h3{font-size:15px;margin:18px 0 6px}
+.lbl{display:block;font-size:15px;font-weight:600;margin:16px 0 6px}
+input#code{width:100%;font:600 20px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+input#code:focus{outline:2px solid var(--accent);outline-offset:1px}
+.send{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 14px;font-size:14px}
+.send.sent{border-color:#2e8b57;color:var(--ink)}
+.send.failed{border-color:var(--stim)}
+.send button{padding:6px 12px;font-size:14px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Alaya · Alertness check</h1><span class="badge" id="phaseBadge">Alaya</span></header>
+  <div class="card" id="screen"></div>
+  <p class="small" style="margin-top:12px">Your results are sent to the research team linked only to your participant code. No names or contact details are collected.</p>
+</div>
+
+<div id="pvt" aria-live="polite">
+  <div class="top"><span id="pvtLabel">Reaction test</span><span id="pvtTime">0:00</span></div>
+  <div class="bar"><i id="pvtBar"></i></div>
+  <div class="stage"><div id="counter"></div></div>
+  <div class="hint">Tap anywhere (or press space) as soon as the red numbers appear</div>
+</div>
+
+<script>
+const KSS = ["Extremely alert","Very alert","Alert","Rather alert","Neither alert nor sleepy",
+  "Some signs of sleepiness","Sleepy, but no effort to keep awake","Sleepy, some effort to keep awake",
+  "Very sleepy, great effort to keep awake, fighting sleep"];
+const LAPSE = 355, FALSE_START = 100, TIMEOUT = 30000;
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbx6AKpCyxXP_G2fftBVIyroBxkoHmlFp0gtrMfgo5fLUcMd9hKlGxvvl8e9qxxVveqL/exec";
+const S = { phase:null, duration:180, kss:null, code:"", sessions:{} };
+const $ = id => document.getElementById(id);
+const screen = $("screen");
+
+function steps(n){ return `<div class="steps">${[0,1,2].map(i=>`<span class="${i<=n?'on':''}"></span>`).join("")}</div>`; }
+function badge(){ $("phaseBadge").textContent = S.phase==="pre" ? "Before music" : S.phase==="post" ? "After music" : "Alaya"; }
+
+function intro(){
+  badge();
+  screen.innerHTML = `${steps(0)}
+    <h2>Alaya alertness check</h2>
+    <p>Two short parts: one question on how sleepy you feel, then a reaction-time game.</p>
+    <label class="lbl" for="code">Your participant code</label>
+    <input id="code" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="e.g. A07" value="${S.code}">
+    <p class="small" style="margin-top:6px">Use the code on your card, and the same code both times.</p>
+    <span class="lbl">When are you doing this?</span>
+    <div class="row seg">
+      <button data-p="pre" class="${S.phase==='pre'?'on':''}">Before the music</button>
+      <button data-p="post" class="${S.phase==='post'?'on':''}">After the music</button>
+    </div>
+    <span class="lbl">Reaction test length</span>
+    <div class="row seg" style="margin-bottom:6px">
+      <button data-d="180" class="${S.duration===180?'on':''}">3 min (study)</button>
+      <button data-d="60" class="${S.duration===60?'on':''}">1 min practice</button>
+    </div>
+    <p class="small">Use 3 minutes unless the organisers tell you otherwise.</p>
+    <button class="primary" id="go" style="margin-top:10px" disabled>Start</button>`;
+  const code=$("code"), go=$("go");
+  const check=()=>{ go.disabled = !(S.code.length>0 && S.phase); };
+  code.addEventListener("input",()=>{ const v=code.value.toUpperCase().replace(/[^A-Z0-9-]/g,""); if(v!==code.value) code.value=v; S.code=v; check(); });
+  screen.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{S.phase=b.dataset.p; intro();});
+  screen.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{S.duration=+b.dataset.d; intro();});
+  check();
+  go.onclick = kss;
+}
+
+function kss(){
+  S.kss = null;
+  screen.innerHTML = `${steps(1)}
+    <h2>How sleepy have you felt in the last 5–10 minutes?</h2>
+    <p class="small">Karolinska Sleepiness Scale</p>
+    <div class="kss">${KSS.map((t,i)=>`<button data-k="${i+1}"><b>${i+1}</b><span>${t}</span></button>`).join("")}</div>
+    <button class="primary" id="next" disabled>Next</button>`;
+  screen.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
+    S.kss=+b.dataset.k; screen.querySelectorAll("[data-k]").forEach(x=>x.classList.toggle("on",x===b)); $("next").disabled=false;});
+  $("next").onclick = pvtIntro;
+}
+
+function pvtIntro(){
+  screen.innerHTML = `${steps(2)}
+    <h2>Reaction test</h2>
+    <p>The screen will stay blank. Every few seconds, <b style="color:var(--stim)">red numbers</b> start counting up. Tap anywhere as fast as you can to stop them.</p>
+    <p>Don't tap before the numbers appear. Sit comfortably and hold the phone the same way each time.</p>
+    <button class="primary" id="start">I'm ready (${S.duration===60?"1 min":"3 min"})</button>`;
+  $("start").onclick = runPVT;
+}
+
+/* ---------- PVT engine ---------- */
+let T = null;
+function runPVT(){
+  const el = $("pvt"), c = $("counter");
+  el.style.display = "flex";
+  $("pvtLabel").textContent = S.phase==="pre" ? "Reaction test · before" : "Reaction test · after";
+  T = { startedAt: new Date(), start: performance.now(), trials: [], falseStarts: 0, state:"wait", onset:0, timer:null, raf:null, done:false };
+  const dur = S.duration*1000;
+  c.className=""; c.textContent="";
+  const clock = setInterval(()=>{
+    const e = performance.now()-T.start, left = Math.max(0, dur-e);
+    $("pvtTime").textContent = Math.floor(left/60000)+":"+String(Math.floor(left/1000)%60).padStart(2,"0");
+    $("pvtBar").style.width = Math.min(100, e/dur*100)+"%";
+  },200);
+  function schedule(){
+    if(performance.now()-T.start >= dur){ return finish(); }
+    T.state="wait"; c.className=""; c.textContent="";
+    const isi = 1000 + Math.random()*3000;            // PVT-B: 1–4 s
+    T.timer = setTimeout(show, isi);
+  }
+  function show(){
+    T.state="stim"; T.onset=performance.now(); c.className="";
+    const tick=()=>{ const ms=performance.now()-T.onset; c.textContent=String(Math.floor(ms)).padStart(3,"0");
+      if(ms>=TIMEOUT){ record(TIMEOUT); return; } T.raf=requestAnimationFrame(tick); };
+    tick();
+  }
+  function record(rt){
+    cancelAnimationFrame(T.raf);
+    T.trials.push({ rt, t:(T.onset-T.start)/1000 });
+    T.state="fb"; c.className="fb"; c.textContent=Math.round(rt);
+    T.timer=setTimeout(schedule, 1000);
+  }
+  function respond(e){
+    if(e.type==="keydown" && e.code!=="Space") return;
+    e.preventDefault();
+    const now=performance.now();
+    if(T.state==="stim"){
+      const rt=now-T.onset;
+      if(rt<FALSE_START){ T.falseStarts++; cancelAnimationFrame(T.raf); flash("Too early"); }
+      else record(rt);
+    } else if(T.state==="wait"){
+      T.falseStarts++; clearTimeout(T.timer); flash("Too early, wait for the numbers");
+    }
+  }
+  function flash(msg){
+    T.state="fb"; c.className="warn"; c.textContent=msg;
+    clearTimeout(T.timer); T.timer=setTimeout(schedule, 1200);
+  }
+  function finish(){
+    if(T.done) return; T.done=true;
+    clearInterval(clock); clearTimeout(T.timer); cancelAnimationFrame(T.raf);
+    el.removeEventListener("pointerdown", respond); window.removeEventListener("keydown", respond);
+    el.style.display="none";
+    S.sessions[S.phase] = { kss:S.kss, ...summarize(T.trials, T.falseStarts), trials:T.trials,
+                            startedAt:T.startedAt, duration:S.duration, sendState:"sending" };
+    results();
+    send(S.phase);
+  }
+  el.addEventListener("pointerdown", respond);
+  window.addEventListener("keydown", respond);
+  T.timer=setTimeout(schedule, 1500);
+}
+
+function summarize(tr, fs){
+  const rts = tr.map(x=>x.rt).sort((a,b)=>a-b);
+  const n = rts.length; if(!n) return { n:0, falseStarts:fs };
+  const mean = rts.reduce((a,b)=>a+b,0)/n;
+  const speed = rts.reduce((a,b)=>a+1000/b,0)/n;            // mean 1/RT (per s)
+  const k = Math.max(1, Math.round(n*0.1));
+  const slow10 = rts.slice(-k).reduce((a,b)=>a+1000/b,0)/k;  // slowest 10% 1/RT
+  return { n, median: rts[Math.floor(n/2)], mean, speed, slow10,
+           lapses: rts.filter(r=>r>=LAPSE).length, falseStarts: fs };
+}
+
+/* ---------- Sending ---------- */
+function localStamp(d){
+  const p=n=>String(n).padStart(2,"0"), off=-d.getTimezoneOffset(), sg=off>=0?"+":"-", a=Math.abs(off);
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} ${sg}${p(Math.floor(a/60))}:${p(a%60)}`;
+}
+async function send(phase){
+  const s=S.sessions[phase]; if(!s) return;
+  s.sendState="sending"; renderSend();
+  const r=(v,d)=>v==null||isNaN(v)?"":+v.toFixed(d);
+  const payload={ participant:S.code, phase: phase==="pre"?"before":"after",
+    device_time: localStamp(s.startedAt), kss:s.kss,
+    median_ms:r(s.median,0), speed:r(s.speed,3), slow10:r(s.slow10,3),
+    lapses:s.lapses??0, false_starts:s.falseStarts??0, n_responses:s.n??0,
+    test_seconds:s.duration, all_reaction_times:s.trials.map(t=>Math.round(t.rt)).join(" ") };
+  try{
+    await fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+    s.sendState="sent";
+  }catch(e){ s.sendState="failed"; }
+  renderSend();
+}
+function renderSend(){
+  const el=$("sendStatus"); if(!el) return;
+  const s=S.sessions[S.phase]; if(!s) return;
+  el.className="send "+s.sendState;
+  if(s.sendState==="sending") el.innerHTML="<span>Sending your results…</span>";
+  else if(s.sendState==="sent") el.innerHTML=`<span>✓ Results sent for code <b>${S.code}</b></span>`;
+  else { el.innerHTML=`<span>Couldn't send. Check your internet connection.</span><button id="retry">Try again</button>`; $("retry").onclick=()=>send(S.phase); }
+}
+
+/* ---------- Results ---------- */
+function results(){
+  const pre=S.sessions.pre, post=S.sessions.post;
+  const both = pre && post;
+  const fmt=(v,d=0)=>v==null||isNaN(v)?"–":v.toFixed(d);
+  const rows=[
+    ["Sleepiness (KSS, 1–9)", s=>s.kss, 0, "lower = more alert"],
+    ["Median reaction time (ms)", s=>s.median, 0, "lower = faster"],
+    ["Response speed (1/RT, per s)", s=>s.speed, 2, "higher = more alert"],
+    ["Slowest 10% speed (per s)", s=>s.slow10, 2, "higher = fewer slow responses"],
+    ["Lapses (≥355 ms)", s=>s.lapses, 0, "lower = better"],
+    ["False starts", s=>s.falseStarts, 0, "lower = better"],
+    ["Valid responses", s=>s.n, 0, ""],
+  ];
+  const cols = both ? ["pre","post"] : [S.phase];
+  screen.innerHTML = `
+    <h2>${both ? "Before vs after" : "Your results"}</h2>
+    <div id="sendStatus" class="send"></div>
+    <p class="small">${both ? "Each person's change from before to after is what the study looks at." : (S.phase==="pre" ? "Thank you. Enjoy the music! Afterwards, scan the QR code again and choose “After the music”." : "Thank you for taking part.")}</p>
+    <div>${cols.map(c=>`<span class="key"><i style="background:var(--${c})"></i>${c==="pre"?"Before":"After"}</span>`).join("")}</div>
+    <div class="chartbox" id="chartbox"><div id="tip"></div></div>
+    <table>
+      <tr><th>Measure</th>${cols.map(c=>`<th>${c==="pre"?"Before":"After"}</th>`).join("")}${both?"<th>Change</th>":""}</tr>
+      ${rows.map(([l,f,d,h])=>{
+        const vals=cols.map(c=>f(S.sessions[c]));
+        const diff = both ? vals[1]-vals[0] : null;
+        return `<tr><td>${l}${h?`<div class="small">${h}</div>`:""}</td>${vals.map(v=>`<td>${fmt(v,d)}</td>`).join("")}${both?`<td>${diff>0?"+":""}${fmt(diff,d)}</td>`:""}</tr>`;
+      }).join("")}
+    </table>
+    ${both
+      ? `<button class="primary" id="restart">Start over</button>
+         <div class="note">In a real study, people would do this before and after the music (and ideally a no-music control session), and we'd look at the change across many people. One person's change isn't meaningful on its own: reaction times vary naturally from one run to the next.</div>`
+      : (S.phase==="pre" ? `<button class="primary" id="toPost">The music is over: do the after-check</button>
+         <div class="note">You can keep this page open and tap the button above after the music, or scan the QR code again later.</div>` : `<button class="primary" id="restart">Done</button>`)}`;
+  drawChart(cols);
+  renderSend();
+  if($("restart")) $("restart").onclick=()=>{S.sessions={};S.phase=null;S.code="";intro();};
+  if($("toPost")) $("toPost").onclick=()=>{S.phase="post";intro();};
+}
+
+function drawChart(cols){
+  const box=$("chartbox"), W=box.clientWidth||500, H=200, m={l:40,r:10,t:10,b:28};
+  const all=cols.flatMap(c=>S.sessions[c].trials);
+  if(!all.length){ box.insertAdjacentHTML("beforeend",`<p class="small">No responses recorded.</p>`); return; }
+  const maxT=Math.max(...cols.map(c=>S.sessions[c].duration)), maxRT=Math.max(500, Math.min(1000, Math.ceil(Math.max(...all.map(d=>d.rt))/100)*100));
+  const x=t=>m.l+(t/maxT)*(W-m.l-m.r), y=r=>m.t+(1-Math.min(r,maxRT)/maxRT)*(H-m.t-m.b);
+  let g="";
+  for(let v=0; v<=maxRT; v+=maxRT>600?200:100){ g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`; }
+  const ticks = maxT<=60?[0,15,30,45,60]:[0,60,120,180];
+  ticks.forEach(t=>g+=`<text x="${x(t)}" y="${H-8}" text-anchor="middle">${t}s</text>`);
+  g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(LAPSE)}" y2="${y(LAPSE)}" stroke="var(--muted)" stroke-dasharray="4 4"/>
+      <text x="${m.l+4}" y="${y(LAPSE)-5}" text-anchor="start">lapse threshold 355 ms</text>`;
+  const dots=cols.map(c=>S.sessions[c].trials.map((d,i)=>
+    `<circle class="dot" cx="${x(d.t)}" cy="${y(d.rt)}" r="4.5" fill="var(--${c})" stroke="var(--card)" stroke-width="2"
+       data-tip="${c==="pre"?"Before":"After"} · trial ${i+1} · ${Math.round(d.rt)} ms"/>`).join("")).join("");
+  box.insertAdjacentHTML("beforeend",
+    `<svg width="${W}" height="${H}" role="img" aria-label="Reaction time for each trial over the test">${g}${dots}
+     <text x="${m.l}" y="${m.t+2}" dy="-2" style="font-size:10px"></text></svg>`);
+  const tip=$("tip");
+  box.querySelectorAll(".dot").forEach(d=>{
+    d.addEventListener("pointerenter",()=>{tip.textContent=d.dataset.tip;tip.style.display="block";
+      tip.style.left=d.getAttribute("cx")+"px";tip.style.top=d.getAttribute("cy")+"px";});
+    d.addEventListener("pointerleave",()=>tip.style.display="none");
+  });
+}
+
+intro();
+</script>
+</body>
+</html>
